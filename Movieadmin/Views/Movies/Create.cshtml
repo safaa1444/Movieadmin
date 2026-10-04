@@ -1,0 +1,101 @@
+@model Movieadmin.Models.Movie
+
+@{
+    ViewData["Title"] = "Add New Movie";
+}
+
+<div class="container mt-4">
+
+    <div class="mb-4">
+        <h1 class="fw-bold">Add New Movie</h1>
+        <p class="text-muted">Add a new movie to your CineLay collection</p>
+    </div>
+
+    <div class="card shadow-sm">
+
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Movie Information</h5>
+        </div>
+
+        <div class="card-body">
+
+            <form asp-action="Create">
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label fw-semibold"></label>
+                    <input asp-for="Title" class="form-control" placeholder="Enter movie title" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Synopsis" class="form-label fw-semibold"></label>
+                    <textarea asp-for="Synopsis" class="form-control" rows="4" placeholder="Write a short movie synopsis"></textarea>
+                    <span asp-validation-for="Synopsis" class="text-danger"></span>
+                </div>
+
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Genre" class="form-label fw-semibold"></label>
+                        <input asp-for="Genre" class="form-control" placeholder="e.g. Action, Drama, Sci-Fi" />
+                        <span asp-validation-for="Genre" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Rating" class="form-label fw-semibold"></label>
+                        <input asp-for="Rating" class="form-control" placeholder="e.g. PG-13" />
+                        <span asp-validation-for="Rating" class="text-danger"></span>
+                    </div>
+
+                </div>
+
+                <h6 class="fw-bold mt-3 mb-3">Runtime</h6>
+
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="RuntimeHours" class="form-label fw-semibold">Hours</label>
+                        <input asp-for="RuntimeHours" class="form-control" type="number" min="0" max="23" />
+                        <span asp-validation-for="RuntimeHours" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="RuntimeMinutes" class="form-label fw-semibold">Minutes</label>
+                        <input asp-for="RuntimeMinutes" class="form-control" type="number" min="0" max="59" />
+                        <span asp-validation-for="RuntimeMinutes" class="text-danger"></span>
+                    </div>
+
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="ReleaseDate" class="form-label fw-semibold"></label>
+                    <input asp-for="ReleaseDate" class="form-control" type="date" />
+                    <span asp-validation-for="ReleaseDate" class="text-danger"></span>
+                </div>
+
+                <div class="d-flex gap-2">
+
+                    <button type="submit" class="btn btn-primary">
+                        + Add Movie
+                    </button>
+
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        Back to Library
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
