@@ -1,155 +1,269 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Movieadmin.Models;
+using Movieadmin.Services;
 
-public class MoviesController : Controller
+namespace Movieadmin.Controllers
 {
-    private readonly MovieContext _context;
-
-    public MoviesController(MovieContext context)
+    public class MoviesController : Controller
     {
-        _context = context;
-    }
+        private readonly MovieContext _context;
+        private readonly BlobStorageService _blobStorageService;
 
-    // GET: MOVIES
-    public async Task<IActionResult> Index()
-    {
-        return View(await _context.Movies
-            .OrderByDescending(m => m.ReleaseDate)
-            .ToListAsync());
-    }
-
-    // GET: MOVIES/Details/5
-    public async Task<IActionResult> Details(int? id)
-    {
-        if (id == null)
+        public MoviesController(
+            MovieContext context,
+            BlobStorageService blobStorageService)
         {
-            return NotFound();
+            _context = context;
+            _blobStorageService = blobStorageService;
         }
 
-        var movie = await _context.Movies
-            .FirstOrDefaultAsync(m => m.Id == id);
-
-        if (movie == null)
+        public async Task<IActionResult> Index()
         {
-            return NotFound();
+            var movies = await _context.Movies
+                .Include(m => m.Genre)
+                .Include(m => m.AudienceRating)
+                .OrderByDescending(m => m.ReleaseDate)
+                .ToListAsync();
+
+            return View(movies);
         }
 
-        return View(movie);
-    }
-
-    // GET: MOVIES/Create
-    public IActionResult Create()
-    {
-        return View();
-    }
-
-    // POST: MOVIES/Create
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("Id,Title,Synopsis,Genre,Rating,RuntimeHours,RuntimeMinutes,ReleaseDate")] Movie movie)
-    {
-        if (ModelState.IsValid)
+        public async Task<IActionResult> Details(int? id)
         {
-            _context.Add(movie);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            if (id == null)
+                return NotFound();
+
+            var movie = await _context.Movies
+                .Include(m => m.Genre)
+                .Include(m => m.AudienceRating)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (movie == null)
+                return NotFound();
+
+            return View(movie);
         }
 
-        return View(movie);
-    }
-
-    // GET: MOVIES/Edit/5
-    public async Task<IActionResult> Edit(int? id)
-    {
-        if (id == null)
+        public async Task<IActionResult> Image(int id)
         {
-            return NotFound();
-        }
+            var movie = await _context.Movies.FindAsync(id);
 
-        var movie = await _context.Movies.FindAsync(id);
+            if (movie == null ||
+                string.IsNullOrWhiteSpace(movie.ImageUrl))
+            {
+                return NotFound();
+            }
 
-        if (movie == null)
-        {
-            return NotFound();
-        }
-
-        return View(movie);
-    }
-
-    // POST: MOVIES/Edit/5
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int? id, [Bind("Id,Title,Synopsis,Genre,Rating,RuntimeHours,RuntimeMinutes,ReleaseDate")] Movie movie)
-    {
-        if (id != movie.Id)
-        {
-            return NotFound();
-        }
-
-        if (ModelState.IsValid)
-        {
             try
             {
-                _context.Update(movie);
-                await _context.SaveChangesAsync();
+                var image = await _blobStorageService.DownloadImageAsync(
+                    movie.ImageUrl);
+
+                return File(
+                    image.Content.ToArray(),
+                    image.Details.ContentType);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Azure.RequestFailedException)
             {
-                if (!MovieExists(movie.Id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return NotFound();
+            }
+        }
+
+        public IActionResult Create()
+        {
+            PopulateDropdowns();
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(
+            [Bind("Title,Synopsis,GenreId,AudienceRatingId,RuntimeHours,RuntimeMinutes,ReleaseDate")]
+            Movie movie,
+            IFormFile? imageFile)
+        {
+            if (imageFile == null || imageFile.Length == 0)
+            {
+                ModelState.AddModelError(
+                    "imageFile", "Please select an image.");
+            }
+            else if (!IsImage(imageFile))
+            {
+                ModelState.AddModelError(
+                    "imageFile",
+                    "Please select a JPG, PNG, GIF, or WebP image.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                PopulateDropdowns(movie.GenreId, movie.AudienceRatingId);
+                return View(movie);
+            }
+
+            string extension =
+                Path.GetExtension(imageFile!.FileName).ToLowerInvariant();
+
+            string fileName = $"{Guid.NewGuid()}{extension}";
+
+            using var stream = imageFile.OpenReadStream();
+
+            movie.ImageUrl = await _blobStorageService.UploadImageAsync(
+                stream,
+                fileName,
+                imageFile.ContentType);
+
+            _context.Movies.Add(movie);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null)
+                return NotFound();
+
+            var movie = await _context.Movies.FindAsync(id);
+
+            if (movie == null)
+                return NotFound();
+
+            PopulateDropdowns(movie.GenreId, movie.AudienceRatingId);
+
+            return View(movie);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(
+            int? id,
+            [Bind("Id,Title,Synopsis,GenreId,AudienceRatingId,RuntimeHours,RuntimeMinutes,ReleaseDate")]
+            Movie movie,
+            IFormFile? imageFile)
+        {
+            if (id != movie.Id)
+                return NotFound();
+
+            var existingMovie = await _context.Movies.FindAsync(id);
+
+            if (existingMovie == null)
+                return NotFound();
+
+            if (imageFile != null &&
+                imageFile.Length > 0 &&
+                !IsImage(imageFile))
+            {
+                ModelState.AddModelError(
+                    "imageFile",
+                    "Please select a JPG, PNG, GIF, or WebP image.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                movie.ImageUrl = existingMovie.ImageUrl;
+
+                PopulateDropdowns(movie.GenreId, movie.AudienceRatingId);
+
+                return View(movie);
+            }
+
+            existingMovie.Title = movie.Title;
+            existingMovie.Synopsis = movie.Synopsis;
+            existingMovie.GenreId = movie.GenreId;
+            existingMovie.AudienceRatingId = movie.AudienceRatingId;
+            existingMovie.RuntimeHours = movie.RuntimeHours;
+            existingMovie.RuntimeMinutes = movie.RuntimeMinutes;
+            existingMovie.ReleaseDate = movie.ReleaseDate;
+
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                string extension =
+                    Path.GetExtension(imageFile.FileName).ToLowerInvariant();
+
+                string fileName = $"{Guid.NewGuid()}{extension}";
+
+                using var stream = imageFile.OpenReadStream();
+
+                existingMovie.ImageUrl =
+                    await _blobStorageService.UploadImageAsync(
+                        stream,
+                        fileName,
+                        imageFile.ContentType);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null)
+                return NotFound();
+
+            var movie = await _context.Movies
+                .Include(m => m.Genre)
+                .Include(m => m.AudienceRating)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (movie == null)
+                return NotFound();
+
+            return View(movie);
+        }
+
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int? id)
+        {
+            var movie = await _context.Movies.FindAsync(id);
+
+            if (movie != null)
+            {
+                _context.Movies.Remove(movie);
+                await _context.SaveChangesAsync();
             }
 
             return RedirectToAction(nameof(Index));
         }
 
-        return View(movie);
-    }
-
-    // GET: MOVIES/Delete/5
-    public async Task<IActionResult> Delete(int? id)
-    {
-        if (id == null)
+        private void PopulateDropdowns(
+            int? selectedGenreId = null,
+            int? selectedAudienceRatingId = null)
         {
-            return NotFound();
+            ViewBag.GenreId = new SelectList(
+                _context.Genres.OrderBy(g => g.Title),
+                "Id",
+                "Title",
+                selectedGenreId);
+
+            ViewBag.AudienceRatingId = new SelectList(
+                _context.AudienceRatings.OrderBy(a => a.Title),
+                "Id",
+                "Title",
+                selectedAudienceRatingId);
         }
 
-        var movie = await _context.Movies
-            .FirstOrDefaultAsync(m => m.Id == id);
-
-        if (movie == null)
+        private static bool IsImage(IFormFile file)
         {
-            return NotFound();
+            string extension =
+                Path.GetExtension(file.FileName).ToLowerInvariant();
+
+            string[] allowedExtensions =
+            {
+                ".jpg", ".jpeg", ".png", ".gif", ".webp"
+            };
+
+            string[] allowedContentTypes =
+            {
+                "image/jpeg", "image/png", "image/gif", "image/webp"
+            };
+
+            return allowedExtensions.Contains(extension)
+                && allowedContentTypes.Contains(
+                    file.ContentType.ToLowerInvariant());
         }
-
-        return View(movie);
-    }
-
-    // POST: MOVIES/Delete/5
-    [HttpPost, ActionName("Delete")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int? id)
-    {
-        var movie = await _context.Movies.FindAsync(id);
-
-        if (movie != null)
-        {
-            _context.Movies.Remove(movie);
-        }
-
-        await _context.SaveChangesAsync();
-
-        return RedirectToAction(nameof(Index));
-    }
-
-    private bool MovieExists(int? id)
-    {
-        return _context.Movies.Any(e => e.Id == id);
     }
 }

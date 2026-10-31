@@ -5,19 +5,26 @@
 }
 
 <div class="container mt-4">
-
     <div class="mb-4">
         <h1 class="fw-bold">Movie Details</h1>
         <p class="text-muted">Explore the movie information</p>
     </div>
 
     <div class="card shadow-sm">
-
         <div class="card-header bg-dark text-white">
             <h4 class="mb-0">@Model.Title</h4>
         </div>
 
         <div class="card-body">
+            @if (!string.IsNullOrEmpty(Model.ImageUrl))
+            {
+                <div class="text-center mb-4">
+                    <img src="@Url.Action("Image", "Movies", new { id = Model.Id })"
+                         alt="@Model.Title poster"
+                         class="img-fluid rounded shadow"
+                         style="max-height:450px;object-fit:contain;" />
+                </div>
+            }
 
             <div class="mb-4">
                 <h6 class="text-muted">Synopsis</h6>
@@ -27,16 +34,15 @@
             <hr />
 
             <div class="row g-4">
-
                 <div class="col-md-6">
                     <h6 class="text-muted">Genre</h6>
-                    <p class="fw-bold">@Model.Genre</p>
+                    <p class="fw-bold">@Model.Genre?.Title</p>
                 </div>
 
                 <div class="col-md-6">
-                    <h6 class="text-muted">Rating</h6>
+                    <h6 class="text-muted">Audience Rating</h6>
                     <span class="badge bg-secondary fs-6">
-                        @Model.Rating
+                        @Model.AudienceRating?.Title
                     </span>
                 </div>
 
@@ -54,27 +60,18 @@
                         @Model.ReleaseDate.ToString("MMMM dd, yyyy")
                     </p>
                 </div>
-
             </div>
 
             <hr />
 
             <div class="d-flex gap-2 mt-3">
-
                 <a asp-action="Edit"
                    asp-route-id="@Model.Id"
-                   class="btn btn-primary">
-                    Edit Movie
-                </a>
+                   class="btn btn-primary">Edit Movie</a>
 
                 <a asp-action="Index"
-                   class="btn btn-outline-secondary">
-                    Back to Library
-                </a>
-
+                   class="btn btn-outline-secondary">Back to Library</a>
             </div>
-
         </div>
     </div>
-
 </div>

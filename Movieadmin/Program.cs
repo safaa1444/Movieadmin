@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Movieadmin.Models;
+using Movieadmin.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSingleton<BlobStorageService>();
 
 var connectionString = builder.Configuration.GetConnectionString("MovieContext")
     ?? throw new InvalidOperationException("Connection string 'MovieContext' not found.");

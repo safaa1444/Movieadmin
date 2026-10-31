@@ -5,22 +5,18 @@
 }
 
 <div class="container mt-4">
-
     <div class="mb-4">
         <h1 class="fw-bold">Edit Movie</h1>
         <p class="text-muted">Update the information of your movie</p>
     </div>
 
     <div class="card shadow-sm">
-
         <div class="card-header bg-dark text-white">
             <h5 class="mb-0">Movie Information</h5>
         </div>
 
         <div class="card-body">
-
-            <form asp-action="Edit">
-
+            <form asp-action="Edit" method="post" enctype="multipart/form-data">
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                 <input type="hidden" asp-for="Id" />
@@ -38,62 +34,79 @@
                 </div>
 
                 <div class="row">
-
                     <div class="col-md-6 mb-3">
-                        <label asp-for="Genre" class="form-label fw-semibold"></label>
-                        <input asp-for="Genre" class="form-control" />
-                        <span asp-validation-for="Genre" class="text-danger"></span>
+                        <label asp-for="GenreId" class="form-label fw-semibold">Genre</label>
+                        <select asp-for="GenreId" asp-items="ViewBag.GenreId" class="form-select">
+                            <option value="">Select Genre</option>
+                        </select>
+                        <span asp-validation-for="GenreId" class="text-danger"></span>
                     </div>
 
                     <div class="col-md-6 mb-3">
-                        <label asp-for="Rating" class="form-label fw-semibold"></label>
-                        <input asp-for="Rating" class="form-control" />
-                        <span asp-validation-for="Rating" class="text-danger"></span>
+                        <label asp-for="AudienceRatingId" class="form-label fw-semibold">Audience Rating</label>
+                        <select asp-for="AudienceRatingId" asp-items="ViewBag.AudienceRatingId" class="form-select">
+                            <option value="">Select Audience Rating</option>
+                        </select>
+                        <span asp-validation-for="AudienceRatingId" class="text-danger"></span>
                     </div>
-
                 </div>
 
                 <h6 class="fw-bold mt-3 mb-3">Runtime</h6>
 
                 <div class="row">
-
                     <div class="col-md-6 mb-3">
                         <label asp-for="RuntimeHours" class="form-label fw-semibold">Hours</label>
-                        <input asp-for="RuntimeHours" class="form-control" type="number" min="0" max="23" />
+                        <input asp-for="RuntimeHours" type="number" min="0" max="23" class="form-control" />
                         <span asp-validation-for="RuntimeHours" class="text-danger"></span>
                     </div>
 
                     <div class="col-md-6 mb-3">
                         <label asp-for="RuntimeMinutes" class="form-label fw-semibold">Minutes</label>
-                        <input asp-for="RuntimeMinutes" class="form-control" type="number" min="0" max="59" />
+                        <input asp-for="RuntimeMinutes" type="number" min="0" max="59" class="form-control" />
                         <span asp-validation-for="RuntimeMinutes" class="text-danger"></span>
                     </div>
-
                 </div>
 
                 <div class="mb-4">
                     <label asp-for="ReleaseDate" class="form-label fw-semibold"></label>
-                    <input asp-for="ReleaseDate" class="form-control" type="date" />
+                    <input asp-for="ReleaseDate" type="date" class="form-control" />
                     <span asp-validation-for="ReleaseDate" class="text-danger"></span>
                 </div>
 
-                <div class="d-flex gap-2">
+                <div class="mb-4">
+                    <label for="imageFile" class="form-label fw-semibold">Movie Poster</label>
 
-                    <button type="submit" class="btn btn-primary">
-                        Save Changes
-                    </button>
+                    @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+                    {
+                        <div class="mb-3">
+                            <img src="@Url.Action("Image", "Movies", new { id = Model.Id })"
+                                 alt="Current movie poster"
+                                 style="max-width: 180px; max-height: 250px; object-fit: contain;" />
+                            <p class="text-muted mt-2">Current poster</p>
+                        </div>
+                    }
 
-                    <a asp-action="Index" class="btn btn-outline-secondary">
-                        Back to Library
-                    </a>
+                    <input type="file"
+                           id="imageFile"
+                           name="imageFile"
+                           class="form-control"
+                           accept=".jpg,.jpeg,.png,.gif,.webp" />
 
+                    <div class="form-text">
+                        Choose a new JPG, PNG, GIF, or WebP image if you want to replace the current poster.
+                        Leave this empty to keep the existing image.
+                    </div>
+
+                    <span class="text-danger">@Html.ValidationMessage("imageFile")</span>
                 </div>
 
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Back to Library</a>
+                </div>
             </form>
-
         </div>
     </div>
-
 </div>
 
 @section Scripts {

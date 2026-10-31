@@ -14,13 +14,13 @@ namespace Movieadmin.Models
         [StringLength(1000)]
         public string Synopsis { get; set; } = "";
 
-        [Required]
-        [StringLength(50)]
-        public string Genre { get; set; } = "";
+        public int GenreId { get; set; }
 
-        [Required]
-        [StringLength(10)]
-        public string Rating { get; set; } = "";
+        public Genre Genre { get; set; } = null!;
+
+        public int AudienceRatingId { get; set; }
+
+        public AudienceRating AudienceRating { get; set; } = null!;
 
         [Range(0, 23)]
         public int RuntimeHours { get; set; }
@@ -31,5 +31,7 @@ namespace Movieadmin.Models
         [Display(Name = "Release Date")]
         [DataType(DataType.Date)]
         public DateTime ReleaseDate { get; set; }
+
+        public string? ImageUrl { get; set; }
     }
 }
