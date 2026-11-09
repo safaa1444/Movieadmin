@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿
+using System.ComponentModel.DataAnnotations;
 
 namespace Movieadmin.Models
 {
@@ -33,5 +34,8 @@ namespace Movieadmin.Models
         public DateTime ReleaseDate { get; set; }
 
         public string? ImageUrl { get; set; }
+
+        public ICollection<MovieReview> MovieReviews { get; set; }
+            = new List<MovieReview>();
     }
 }

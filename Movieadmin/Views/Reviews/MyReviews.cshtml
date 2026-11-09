@@ -1,0 +1,98 @@
+﻿@model IEnumerable<Movieadmin.Models.MovieReview>
+
+@{
+    ViewData["Title"] = "My Reviews";
+}
+
+<h2>My Reviews</h2>
+
+<hr />
+
+@if (!Model.Any())
+{
+    <p>You have not written any reviews yet.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Movie</th>
+                <th>Rating</th>
+                <th>Review</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var review in Model)
+            {
+                <tr>
+                    <td>@review.Movie.Title</td>
+
+                    <td>@review.Rating / 5</td>
+
+                    <td>@review.ReviewText</td>
+
+                    <td>
+                        @if (review.IsPublished)
+                        {
+                            <span class="badge bg-success">Published</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark">Draft</span>
+                        }
+                    </td>
+
+                    <td>@review.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")</td>
+
+                    <td>
+                        @if (!review.IsPublished)
+                        {
+                            <a asp-action="Edit"
+                               asp-route-id="@review.Id"
+                               class="btn btn-sm btn-primary">
+                                Edit
+                            </a>
+
+                            <form asp-action="Publish"
+                                  asp-route-id="@review.Id"
+                                  method="post"
+                                  style="display:inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit"
+                                        class="btn btn-sm btn-success">
+                                    Publish
+                                </button>
+                            </form>
+
+                            <form asp-action="Delete"
+                                  asp-route-id="@review.Id"
+                                  method="post"
+                                  style="display:inline"
+                                  onsubmit="return confirm('Delete this review?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit"
+                                        class="btn btn-sm btn-danger">
+                                    Delete
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <span>Published reviews cannot be changed.</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<a asp-controller="Movies" asp-action="Index"
+   class="btn btn-secondary">
+    Back to Movies
+</a>

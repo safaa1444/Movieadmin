@@ -1,0 +1,49 @@
+﻿@model Movieadmin.Models.MovieReview
+
+@{
+    ViewData["Title"] = "Edit Review";
+}
+
+<h2>Edit Review</h2>
+
+<h4>@ViewBag.MovieTitle</h4>
+
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Edit" method="post">
+            <input type="hidden" asp-for="Id" />
+
+            <div class="form-group mb-3">
+                <label asp-for="Rating">Rating (0–5)</label>
+                <input asp-for="Rating" type="number"
+                       min="0" max="5" class="form-control" />
+                <span asp-validation-for="Rating" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="ReviewText">Your Review</label>
+                <textarea asp-for="ReviewText"
+                          class="form-control" rows="5"
+                          maxlength="1000"></textarea>
+                <span asp-validation-for="ReviewText" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Save Changes
+            </button>
+
+            <a asp-controller="Movies" asp-action="Details"
+               asp-route-id="@Model.MovieId" class="btn btn-secondary">
+                Cancel
+            </a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

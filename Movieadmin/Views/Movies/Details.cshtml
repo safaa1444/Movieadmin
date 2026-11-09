@@ -75,3 +75,49 @@
         </div>
     </div>
 </div>
+
+<hr />
+
+<h3>Movie Reviews</h3>
+
+@if (Model.MovieReviews != null && Model.MovieReviews.Any())
+{
+    <p>
+        Total Reviews: @Model.MovieReviews.Count
+    </p>
+
+    @foreach (var review in Model.MovieReviews)
+    {
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5>Rating: @review.Rating / 5</h5>
+
+                <p>@review.ReviewText</p>
+
+                <small class="text-muted">
+                    @review.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")
+                </small>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <p>No published reviews yet.</p>
+}
+
+@if (User.IsInRole("critic"))
+{
+    <a asp-controller="Reviews"
+       asp-action="Create"
+       asp-route-movieId="@Model.Id"
+       class="btn btn-primary">
+        Write a Review
+    </a>
+
+    <a asp-controller="Reviews"
+       asp-action="MyReviews"
+       class="btn btn-secondary">
+        My Reviews
+    </a>
+}

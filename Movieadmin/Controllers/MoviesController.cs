@@ -1,11 +1,14 @@
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Movieadmin.Models;
 using Movieadmin.Services;
 
 namespace Movieadmin.Controllers
 {
+    [Authorize(Roles = "administrator")]
     public class MoviesController : Controller
     {
         private readonly MovieContext _context;
@@ -38,6 +41,7 @@ namespace Movieadmin.Controllers
             var movie = await _context.Movies
                 .Include(m => m.Genre)
                 .Include(m => m.AudienceRating)
+                .Include(m => m.MovieReviews.Where(r => r.IsPublished))
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (movie == null)
